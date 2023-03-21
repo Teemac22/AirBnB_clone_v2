@@ -1,37 +1,30 @@
 #!/usr/bin/python3
-"""
-do_pack(): Generates a .tgz archive from the
-contents of the web_static folder
-do_deploy(): Distributes an archive to a web server
-deploy (): Creates and distributes an archive to a web server
-do_clean(): Deletes out-of-date archives
-"""
+""" Based on 3-deploy_web_static.py, delete out-of-date archives
+using the do_clean function """
 
-from fabric.operations import local, run, put, sudo
+from fabric.operations import local, run, put
 from datetime import datetime
 import os
 from fabric.api import env
 import re
 
 
-env.hosts = ['3.236.9.233', '44.200.93.43']
+env.hosts = ['35.172.217.245', '18.205.96.171']
 
 
 def do_pack():
-    """Function to compress files in an archive"""
+    """ Function for file compression """
     local("mkdir -p versions")
-    filename = "versions/web_static_{}.tgz".format(datetime.strftime(
-                                                   datetime.now(),
-                                                   "%Y%m%d%H%M%S"))
-    result = local("tar -cvzf {} web_static"
-                   .format(filename))
+    result = local("tar -cvzf versions/web_static_{}.tgz web_static"
+                   .format(datetime.strftime(datetime.now(), "%Y%m%d%H%M%S")),
+                   capture=True)
     if result.failed:
         return None
-    return filename
+    return result
 
 
 def do_deploy(archive_path):
-    """Function to distribute an archive to a server"""
+    """ Function to distribute archive to servers """
     if not os.path.exists(archive_path):
         return False
     rex = r'^versions/(\S+).tgz'
@@ -71,7 +64,7 @@ def do_deploy(archive_path):
 
 
 def deploy():
-    """Creates and distributes an archive to a web server"""
+    """ Create and distribute an archive to web servers """
     filepath = do_pack()
     if filepath is None:
         return False
@@ -80,18 +73,18 @@ def deploy():
 
 
 def do_clean(number=0):
-    """Deletes out-of-date archives"""
+    """ Delete out-of-dates archives """
     files = local("ls -1t versions", capture=True)
-    file_names = files.split("\n")
+    file_names = file.split("\n")
     n = int(number)
     if n in (0, 1):
         n = 1
     for i in file_names[n:]:
         local("rm versions/{}".format(i))
-    dir_server = run("ls -1t /data/web_static/releases")
-    dir_server_names = dir_server.split("\n")
-    for i in dir_server_names[n:]:
-        if i is 'test':
-            continue
-        run("rm -rf /data/web_static/releases/{}"
-            .format(i))
+        dir_server = run("ls -1t /data/web_static/releases")
+        dir_server_names = dir_server.split("\n")
+        for i in dir_server_names[n:]:
+            if i is 'test':
+                continue
+            run("rm -rf /data/web_static/releases/{}"
+                .format(i))
