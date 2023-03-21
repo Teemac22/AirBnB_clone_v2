@@ -1,46 +1,28 @@
 #!/usr/bin/python3
 """
-script that starts a Flask web application:
-States and cities
+starts a Flask web application
 """
-from flask import Flask
-from flask import render_template
-from models import storage
-from models.state import State
-from models.city import City
 
+from flask import Flask, render_template
+from models import *
+from models import storage
 app = Flask(__name__)
+
+
+@app.route('/states', strict_slashes=False)
+@app.route('/states/<state_id>', strict_slashes=False)
+def states(state_id=None):
+    """display the states and cities listed in alphabetical order"""
+    states = storage.all("State")
+    if state_id is not None:
+        state_id = 'State.' + state_id
+    return render_template('9-states.html', states=states, state_id=state_id)
 
 
 @app.teardown_appcontext
 def teardown_db(exception):
-    """
-    Function to remove SQLAlchemy Session
-    """
+    """closes the storage on teardown"""
     storage.close()
 
-
-@app.route('/states/', strict_slashes=False)
-def states_list():
-    """
-    Template html Cities
-    """
-    the_states = storage.all(State).values()
-    return render_template('7-states_list.html', my_states=the_states)
-
-
-@app.route('/states/<number>', strict_slashes=False)
-def cities_list(number):
-    """
-    Template html Cities
-    """
-    the_states = storage.all(State)
-    state_id = 'State.{}'.format(number)
-    if state_id in the_states:
-        the_states = the_states[state_id]
-    else:
-        the_states = None
-    return render_template('9-states.html', my_states=the_states)
-
-if __name__ == "__main__":
-    app.run("0.0.0.0", debug=True)
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port='5000')
